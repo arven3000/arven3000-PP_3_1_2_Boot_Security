@@ -30,9 +30,17 @@ public class UserServiceImpl implements UserService {
     @Transactional
     @Override
     public void saveUser(User user) {
+        boolean checkedEmail = userRepository.getAll()
+                .stream()
+                .map(User::getEmail)
+                .anyMatch(e -> e.equals(user.getEmail()));
         Optional<User> userFromDB = userRepository.findByEmail(user.getUsername());
         long id = user.getRoles().stream().findFirst().get().getId();
         Role role = roleRepository.findById(id).get();
+
+        if (checkedEmail && !userFromDB.get().getId().equals(user.getId())) {
+            throw new RuntimeException("This mail is already in use");
+        }
         if (userFromDB.isEmpty()) {
             user.setRoles(Collections.singleton(role));
             user.setPassword(passwordEncoder.encode(user.getPassword()));
